@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1"/>
+
+  <title>Terraform - multiple environments</title>
+  <meta name="description" content="Thierry Humphrey, DevOps and Site Reliability Engineer">
+  <meta name="keywords" content="devops, thierry humphrey, thyhum">
+  <link rel="icon" href="../../../../../assets/favicon.pencil.png" type="image/x-icon">
+
+  <link rel="stylesheet" href="/assets/aboutme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/owl.carousel.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/owl.theme.default.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/lightbox.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/parallax.css" type="text/css">
+  <link rel="stylesheet" href="/assets/aboutme/css/style.css" type="text/css">
+  <link rel="stylesheet" href="/assets/aboutme/css/responsive.css" type="text/css">
+  <link rel="stylesheet" href="/assets/pygments.css">
+</head>
+<body>
+
+
+  <header id="header" class="header">
+    <div class="header-nav bg-color">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <nav class="main-menu">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                        aria-expanded="false" aria-controls="navbar">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar top-bar"></span>
+                  <span class="icon-bar middle-bar"></span>
+                  <span class="icon-bar bottom-bar"></span>
+                </button>
+                <a class="navbar-brand" href="../../../../..">
+                  <img class="logo" src="/assets/aboutme/images/logo-color.png" alt="AboutMe">
+                </a>
+              </div>
+              <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                  <li><a class="menubgactive" href="../../../../..">Back To Home</a></li>
+                </ul>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="single-page-banner" class="page-title page-title-image blog-hbg">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-6">
+        </div>
+        <div class="col-sm-6">
+          <ul class="breadcrumb">
+            <li><a href="../../../../..">Home</a></li>
+            <li class="active">Terraform - multiple environments</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <div id="content" class="content SectionMargin">
+    <div class="container">
+      <div class="row">
+
+        <div id="single-post-content" class="col-sm-8">
+          <article class="post">
+            <div class="post-title">
+              <h1>Terraform - multiple environments</h1>
+            </div>
+            <div class="post-meta">
+              <span><i class="fa fa-calendar"></i>Thu 22 February 2018</span>
+              <span><i class="fa fa-tags"></i>
+                  <a href="../../../../../tag/terraform.html">terraform</a>
+                    ,
+                  <a href="../../../../../tag/ansible.html">ansible</a>
+            </span>
+            </div>
+
+            <div class="post-body">
+<div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#terraform-multiple-environments">Terraform - multiple environments</a></li>
+<li><a href="#requirements">Requirements</a><ul>
+<li><a href="#1-tools">1. Tools</a></li>
+<li><a href="#2-domain">2. Domain</a></li>
+</ul>
+</li>
+<li><a href="#environments">Environments</a></li>
+<li><a href="#terraform-variables">Terraform Variables</a><ul>
+<li><a href="#global">Global</a></li>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#sample-environments-in-this-repo">Sample Environments in this repo</a></li>
+</ul>
+</li>
+<li><a href="#usage">Usage</a><ul>
+<li><a href="#initialize">Initialize</a></li>
+<li><a href="#create">Create</a></li>
+<li><a href="#destroy">Destroy</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="terraform-multiple-environments">Terraform - multiple environments</h1>
+<p>The goal of this repo is to show how we can safely and easily create, change and improve infrastructure in multiple environments using Terraform. </p>
+<p>It supports multiple environments (eg. DEV, QA, UAT and PROD) using a same Terraform configuration while maintaining consistencies between those environments, meaning each run on different environment will match the previous ones. </p>
+<p>As a sample, we deploy mongo 3.4 docker image. The focus is still on Terraform configuration managing AWS resources and trigerring Ansible to deploy application inside instances (Not much on MongoDB setting).</p>
+<p>It is using AWS provider to understand the API to manage these resources:</p>
+<ul>
+<li>VPC</li>
+<li>Security Groups</li>
+<li>Elastic Block Store Volumes</li>
+<li>Route 53</li>
+<li>EC2 Instance</li>
+</ul>
+<p>Terraform will continue with triggering ansible to configure the instances:
+* Generate the inventory for number of instances which are dynamically created
+* Run ansible-playbook locally</p>
+<p>Ansible playbook will then take care of configuring the instances:
+* Creating MongoDB DB PV/VG/LV on EBS disk
+* Installing docker with all required packages (eg. Docker CE, docker-compose)
+* Configuring MongoDB docker:
+    * Expose MongoDB port (27017)
+    * Bind DB Volumes to /data/db
+    * Route Log message to syslog</p>
+<p>It can be enhanced to support multi IaaS providers (eg. GCP/Azure, etc) and operating system (eg. Ubuntu); and even be integrated with other SaaS (eg. Cloudflare, DNS provider, etc).</p>
+<h1 id="requirements">Requirements</h1>
+<h2 id="1-tools">1. Tools</h2>
+<p>Ensure we have the following tools installed and activated (I have not verified whether or not there is any compatibility issue with different version):
+* Terraform v0.11.3
+    * provider.aws v1.9.0
+    * provider.null v1.0.0
+* Python v3.5.2
+* Ansible v2.4.3.0</p>
+<h2 id="2-domain">2. Domain</h2>
+<ul>
+<li>
+<p>Create a zone in Route 53 (eg. thyhum.com) as main DNS domain<br>
+    It'll be used as a data source in Terraform later. We don't configure it as a resource to prevent it being removed when we destroy our infrastructure :)  </p>
+<p>You can use existing zone too.</p>
+</li>
+<li>
+<p>Create NS records in your DNS server (eg. thyhum.com) to AWS NS servers, or point your domain Nameservers to AWS.<br>
+    Optional, if you really want to connect to newly created instances using FQDN later:</p>
+</li>
+</ul>
+<h1 id="environments">Environments</h1>
+<ul>
+<li>Each resource will have a tag (Environment) where it's in</li>
+<li>Each instance's FQDN will be under <ENV>.your.domain, eg.<ul>
+<li>An instance in DEV-AP: mongo.dev-ap.thyhum.com </li>
+</ul>
+</li>
+</ul>
+<h1 id="terraform-variables">Terraform Variables</h1>
+<h2 id="global">Global</h2>
+<p>Global variables are stored in <em>terraform.tfvars</em>. </p>
+<div class="highlight"><pre><span></span><code>aws_access_key   = &quot;&lt;Your AWS Access Key&gt;&quot;
+aws_secret_key   = &quot;&lt;Your AWS Secret Key&gt;&quot;
+
+dns_domain       = &quot;thyhum.com&quot;
+</code></pre></div>
+
+<h2 id="environment">Environment</h2>
+<p>Environment variable is located in "<strong>environment/<TF_ENV>/main.yml</strong>".  </p>
+<p>It will override variables defined in terraform.tfvars and variables with default value. As an example, in dev-ap environment, we use different DNS Domain and also define environment-specific variables (eg. Resource's environment tag, CIDR block, Region, etc):</p>
+<div class="highlight"><pre><span></span><code>$ cat environments/dev-ap/main.tfvars 
+<span class="nv">dns_domain</span> <span class="o">=</span> <span class="s2">&quot;thyhum.io&quot;</span>
+
+<span class="nv">tag_environment</span>      <span class="o">=</span> <span class="s2">&quot;thyhum&quot;</span>
+<span class="nv">aws_vpc_cidr_block</span>   <span class="o">=</span> <span class="s2">&quot;10.255.0.0/26&quot;</span>
+<span class="nv">aws_region</span>           <span class="o">=</span> <span class="s2">&quot;ap-southeast-2&quot;</span>
+<span class="nv">aws_az_count</span>         <span class="o">=</span> <span class="m">3</span>
+<span class="nv">mongodb_count</span>        <span class="o">=</span> <span class="m">2</span>
+<span class="nv">mongodb_ebs_vol_size</span> <span class="o">=</span> <span class="m">1</span>
+</code></pre></div>
+
+<p>Optionally, you can override other variables too (eg. using different set of SSH public/private keys).</p>
+<h2 id="sample-environments-in-this-repo">Sample Environments in this repo</h2>
+<p>Main DNS Domain: thyhum.com</p>
+<ul>
+<li>
+<p><strong>dev-ap</strong> (environment/dev-ap/main.tfvars)<br>
+    Region: ap-southeast-2<br>
+    AZ count: 3<br>
+    MongoDB count: 2<br>
+    EBS Volume size: 1GB<br>
+    Sub-domain: dev-ap.thyhum.com  </p>
+</li>
+<li>
+<p><strong>dev-us</strong> (environment/dev-us/main.tfvars)<br>
+    Region: us-west-1<br>
+    AZ count: 2 (at the time of writing, us-west-1 has two AZs)<br>
+    MongoDB count: 3 (instances will be distributed to the two AZs)<br>
+    EBS Volume size: 1GB<br>
+    Sub-domain: dev-us.thyhum.com  </p>
+</li>
+<li>
+<p><strong>uat</strong> (environment/uat/main.tfvars)<br>
+    Region: us-east-1<br>
+    AZ count: 3<br>
+    MongoDB count: 3<br>
+    EBS Volume size: 1TB<br>
+    Sub-domain: uat.thyhum.com  </p>
+</li>
+<li>
+<p><strong>prod</strong> (environment/prod/main.tfvars)<br>
+    Region: us-east-1<br>
+    AZ count: 6<br>
+    MongoDB count: 6<br>
+    EBS Volume size: 1TB<br>
+    Sub-domain: prod.thyhum.com  </p>
+</li>
+</ul>
+<h1 id="usage">Usage</h1>
+<h2 id="initialize">Initialize</h2>
+<p>As a start, go to the folder where terraform configuration files located. </p>
+<p>Run <em>terraform init</em> to install all required plugins (aws and null). This command need to be run at the first-time after cloning from version control or adding a new provider in Terraform configuration.</p>
+<div class="highlight"><pre><span></span><code>$ terraform init
+Initializing provider plugins...
+- Checking <span class="k">for</span> available provider plugins on https://releases.hashicorp.com...
+- Downloading plugin <span class="k">for</span> provider <span class="s2">&quot;aws&quot;</span> <span class="o">(</span><span class="m">1</span>.9.0<span class="o">)</span>...
+- Downloading plugin <span class="k">for</span> provider <span class="s2">&quot;null&quot;</span> <span class="o">(</span><span class="m">1</span>.0.0<span class="o">)</span>...
+
+...&lt;snip&gt;...
+
+If you ever <span class="nb">set</span> or change modules or backend configuration <span class="k">for</span> Terraform,
+rerun this <span class="nb">command</span> to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to <span class="k">do</span> so <span class="k">if</span> necessary.
+</code></pre></div>
+
+<p>Once you have initialized your working directory, we can continue with running Terraform on an environment using this command. For example, we want to manage <em>dev-ap</em> environment:</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">export</span> <span class="nv">TF_VAR_ENV</span><span class="o">=</span>YOUR_ENV <span class="p">;</span> terraform apply -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars
+</code></pre></div>
+
+<p>Basically, we export an environment variable (TF_VAR_ENV) to let Terraform knows about where state and variable files located, and to reference it inside configuration.  </p>
+<p>Alternatively, you can export the variable and keep running terraform command. </p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">export</span> <span class="nv">TF_VAR_ENV</span><span class="o">=</span>YOUR_ENV
+$ terraform apply -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars
+$ terraform apply -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars
+$ terraform apply -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars
+</code></pre></div>
+
+<p>I prefer the first option as I will always see what environment I'm working on.  </p>
+<p>This command can be put in a wrapper script too, eg:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Not implemented yet</span>
+$ ./terraform.multienv.sh dev-ap
+</code></pre></div>
+
+<h2 id="create">Create</h2>
+<p>Now let me show you how to create an environment.</p>
+<p>Terraform v0.11.3 has merged <em>plan</em> to <em>apply</em> command, so we can safely run <em>terraform apply</em> to review it before performing the actions.</p>
+<p>Specify the environment (eg. dev-ap) to <code>TF_VAR_ENV</code> followed by <code>terraform &lt;action&gt; &lt;parameters&gt;</code>. When you need to work on a different environment, just put it in <code>TF_VAR_ENV</code> variable and use the same Terraform command.</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">export</span> <span class="nv">TF_VAR_ENV</span><span class="o">=</span>dev-ap <span class="p">;</span> terraform apply -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars 
+data.aws_availability_zones.az: Refreshing state...
+data.aws_ami.instance: Refreshing state...
+data.aws_route53_zone.dns_domain: Refreshing state...
+n execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  + aws_ebs_volume.ebs_vol<span class="o">[</span><span class="m">0</span><span class="o">]</span>
+      id:                                        &lt;computed&gt;
+      arn:                                       &lt;computed&gt;
+
+...&lt;snip&gt;...
+
+Plan: <span class="m">23</span> to add, <span class="m">0</span> to change, <span class="m">0</span> to destroy.
+
+Do you want to perform these actions?
+  Terraform will perform the actions described above.
+  Only <span class="s1">&#39;yes&#39;</span> will be accepted to approve.
+
+  Enter a value: 
+</code></pre></div>
+
+<p>Here you review the changes and type <strong>yes</strong> to proceed.  </p>
+<div class="highlight"><pre><span></span><code>  Enter a value: yes
+
+aws_vpc.vpc: Creating...
+  assign_generated_ipv6_cidr_block: <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;false&quot;</span>
+  cidr_block:                       <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;10.255.0.0/26&quot;</span>
+  default_network_acl_id:           <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  default_route_table_id:           <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  default_security_group_id:        <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  dhcp_options_id:                  <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  enable_classiclink:               <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  enable_classiclink_dns_support:   <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  enable_dns_hostnames:             <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;&lt;computed&gt;&quot;</span>
+  enable_dns_support:               <span class="s2">&quot;&quot;</span> <span class="o">=</span>&gt; <span class="s2">&quot;true&quot;</span>
+
+...&lt;snip&gt;...  
+
+null_resource.mongodb1: Provisioning with <span class="s1">&#39;local-exec&#39;</span>...
+null_resource.mongodb1 <span class="o">(</span>local-exec<span class="o">)</span>: Executing: <span class="o">[</span><span class="s2">&quot;/bin/sh&quot;</span> <span class="s2">&quot;-c&quot;</span> <span class="s2">&quot;echo \&quot;[mongodb]\n54.252.173.177\n13.210.150.99\n\&quot; &gt; environments/dev-ap/inventories\n\nansible-playbook ansible/mongodb.yml \\\n -i environments/dev-ap/inventories \\\n -u centos \\\n --key-file environments/xxxxxxxxx\n\n&quot;</span><span class="o">]</span>
+
+null_resource.mongodb1 <span class="o">(</span>local-exec<span class="o">)</span>: PLAY <span class="o">[</span>Wait <span class="k">for</span> ssh running on all instance<span class="o">]</span> *************************************
+
+null_resource.mongodb1 <span class="o">(</span>local-exec<span class="o">)</span>: TASK <span class="o">[</span>pause<span class="o">]</span> *******************************************************************
+null_resource.mongodb1 <span class="o">(</span>local-exec<span class="o">)</span>: Pausing <span class="k">for</span> <span class="m">90</span> seconds
+null_resource.mongodb1 <span class="o">(</span>local-exec<span class="o">)</span>: <span class="o">(</span>ctrl+C <span class="k">then</span> <span class="s1">&#39;C&#39;</span> <span class="o">=</span> <span class="k">continue</span> early, ctrl+C <span class="k">then</span> <span class="s1">&#39;A&#39;</span> <span class="o">=</span> abort<span class="o">)</span>
+aws_route53_zone.dns_environment: Still creating... <span class="o">(</span>1m0s elapsed<span class="o">)</span>
+
+...&lt;snip&gt;...
+
+null_resource.mongodb1: Creation <span class="nb">complete</span> after 3m37s <span class="o">(</span>ID: XXXXXXXXXXXXXXXX<span class="o">)</span>
+
+Apply complete! Resources: <span class="m">23</span> added, <span class="m">0</span> changed, <span class="m">0</span> destroyed.
+
+Outputs:
+
+MongoDB FQDNs <span class="o">(</span>port: <span class="m">27017</span><span class="o">)</span> <span class="o">=</span> <span class="o">[</span>
+    mongodb-0.dev-ap.thyhum.com,
+    mongodb-1.dev-ap.thyhum.com
+<span class="o">]</span>
+</code></pre></div>
+
+<p>Test the connection to each instances</p>
+<div class="highlight"><pre><span></span><code>$ telnet mongodb-0.dev-ap.thyhum.com <span class="m">27017</span>
+Trying <span class="m">54</span>.252.173.177...
+Connected to mongodb-0.thyhum.d.thy.science.
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+^<span class="o">]</span>
+telnet&gt; q
+Connection closed.
+
+$ telnet mongodb-1.dev-ap.thyhum.com <span class="m">27017</span>
+Trying <span class="m">13</span>.210.150.99...
+Connected to mongodb-1.thyhum.d.thy.science.
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+^<span class="o">]</span>
+telnet&gt; q
+Connection closed.
+</code></pre></div>
+
+<p>We have successfully deployed two MongoDB servers to dev-ap and verified the connectivity.  </p>
+<h2 id="destroy">Destroy</h2>
+<p>Now I'm going to show you destroying dev-ap environment.  </p>
+<p>It will remove all resources (Instances, Security Groups, EBS Volumes, etc)</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">export</span> <span class="nv">TF_VAR_ENV</span><span class="o">=</span>dev-ap <span class="p">;</span> terraform destroy -state<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/terraform.tfstate -var-file<span class="o">=</span>environments/<span class="nv">$TF_VAR_ENV</span>/main.tfvars 
+aws_vpc.vpc: Refreshing state... <span class="o">(</span>ID: vpc-xxxxxxxx<span class="o">)</span>
+aws_key_pair.key_pair: Refreshing state... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route53_zone.dns_environment: Refreshing state... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+data.aws_route53_zone.dns_domain: Refreshing state...
+data.aws_availability_zones.az: Refreshing state...
+data.aws_ami.instance: Refreshing state...
+aws_ebs_volume.ebs_vol<span class="o">[</span><span class="m">0</span><span class="o">]</span>: Refreshing state... <span class="o">(</span>ID: vol-xxxxxxxx<span class="o">)</span>
+aws_ebs_volume.ebs_vol<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Refreshing state... <span class="o">(</span>ID: vol-xxxxxxxx<span class="o">)</span>
+aws_route53_record.dns_environment_ns: Refreshing state... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+
+...&lt;snip&gt;...
+
+Terraform will perform the following actions:
+
+  - aws_ebs_volume.ebs_vol<span class="o">[</span><span class="m">0</span><span class="o">]</span>
+
+  - aws_ebs_volume.ebs_vol<span class="o">[</span><span class="m">1</span><span class="o">]</span>
+
+  - aws_instance.mongodb1<span class="o">[</span><span class="m">0</span><span class="o">]</span>
+
+  - aws_instance.mongodb1<span class="o">[</span><span class="m">1</span><span class="o">]</span>
+
+  - aws_internet_gateway.igw
+
+  - aws_key_pair.key_pair
+
+  - aws_route53_record.dns_environment_ns
+
+  - aws_route53_record.mongodb1<span class="o">[</span><span class="m">0</span><span class="o">]</span>
+
+...&lt;snip&gt;...
+
+Plan: <span class="m">0</span> to add, <span class="m">0</span> to change, <span class="m">23</span> to destroy.
+
+Do you really want to destroy?
+  Terraform will destroy all your managed infrastructure, as shown above.
+  There is no undo. Only <span class="s1">&#39;yes&#39;</span> will be accepted to confirm.
+
+  Enter a value: yes
+
+null_resource.mongodb1: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+null_resource.mongodb1: Destruction <span class="nb">complete</span> after 0s
+aws_route53_record.mongodb1<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route53_record.dns_environment_ns: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route53_record.mongodb1<span class="o">[</span><span class="m">0</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_volume_attachment.vol_attach<span class="o">[</span><span class="m">0</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route_table_association.rta<span class="o">[</span><span class="m">0</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route_table_association.rta<span class="o">[</span><span class="m">2</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route_table_association.rta<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_volume_attachment.vol_attach<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+aws_route_table_association.rta<span class="o">[</span><span class="m">2</span><span class="o">]</span>: Destruction <span class="nb">complete</span> after 1s
+aws_route_table_association.rta<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Destruction <span class="nb">complete</span> after 1s
+aws_route_table_association.rta<span class="o">[</span><span class="m">0</span><span class="o">]</span>: Destruction <span class="nb">complete</span> after 1s
+aws_route_table.route_table: Destroying... <span class="o">(</span>ID: xxxxxxxx<span class="o">)</span>
+
+...&lt;snip&gt;...
+
+Destroy complete! Resources: <span class="m">23</span> destroyed.
+</code></pre></div>            </div>
+          </article>
+        </div>
+
+        <aside id="sidebar" class="col-sm-4">
+          <div class="widget-area">
+            <div class="widget tags-widget">
+              <h3><strong>Tags</strong></h3>
+              <div class="tags">
+                  <a href="../../../../../tag/vagrant.html">
+                    vagrant
+                  </a>
+                  <a href="../../../../../tag/ansible.html">
+                    ansible
+                  </a>
+                  <a href="../../../../../tag/terraform.html">
+                    terraform
+                  </a>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+
+<footer id="footer" class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12">
+      <br>
+          <p class="text-center copyright">Proudly powered by
+            <a href="https://getpelican.com/" class="footer-site-link">
+              Pelican, Static Site Generator
+            </a>.
+          </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<a href="#" class="scrollup"><i class="fa fa-arrow-circle-up"></i></a>
+
+<script src="/assets/aboutme/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/aboutme/js/bootstrap.min.js"></script>
+<script src="/assets/aboutme/js/circle-progress.js"></script>
+<script src="/assets/aboutme/js/isotope.pkgd.min.js"></script>
+<script src="/assets/aboutme/js/lightbox.min.js"></script>
+<script src="/assets/aboutme/js/owl.carousel.min.js"></script>
+<script src="/assets/aboutme/js/validator.min.js"></script>
+<script src="/assets/aboutme/js/jquery.ajaxchimp.min.js"></script>
+<script src="/assets/aboutme/js/waypoint.js"></script>
+<script src="/assets/aboutme/js/jquery.counterup.min.js"></script>
+<script src="/assets/aboutme/js/main.js"></script>
+</body>
+</html>

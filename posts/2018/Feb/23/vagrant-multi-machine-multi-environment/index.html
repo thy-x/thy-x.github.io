@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="IE=edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1"/>
+
+  <title>Vagrant - Multi-Machine-Multi-Environment</title>
+  <meta name="description" content="Thierry Humphrey, DevOps and Site Reliability Engineer">
+  <meta name="keywords" content="devops, thierry humphrey, thyhum">
+  <link rel="icon" href="../../../../../assets/favicon.pencil.png" type="image/x-icon">
+
+  <link rel="stylesheet" href="/assets/aboutme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/owl.carousel.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/owl.theme.default.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/lightbox.min.css">
+  <link rel="stylesheet" href="/assets/aboutme/css/parallax.css" type="text/css">
+  <link rel="stylesheet" href="/assets/aboutme/css/style.css" type="text/css">
+  <link rel="stylesheet" href="/assets/aboutme/css/responsive.css" type="text/css">
+  <link rel="stylesheet" href="/assets/pygments.css">
+</head>
+<body>
+
+
+  <header id="header" class="header">
+    <div class="header-nav bg-color">
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <nav class="main-menu">
+              <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                        aria-expanded="false" aria-controls="navbar">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar top-bar"></span>
+                  <span class="icon-bar middle-bar"></span>
+                  <span class="icon-bar bottom-bar"></span>
+                </button>
+                <a class="navbar-brand" href="../../../../..">
+                  <img class="logo" src="/assets/aboutme/images/logo-color.png" alt="AboutMe">
+                </a>
+              </div>
+              <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                  <li><a class="menubgactive" href="../../../../..">Back To Home</a></li>
+                </ul>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="single-page-banner" class="page-title page-title-image blog-hbg">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-6">
+        </div>
+        <div class="col-sm-6">
+          <ul class="breadcrumb">
+            <li><a href="../../../../..">Home</a></li>
+            <li class="active">Vagrant - Multi-Machine-Multi-Environment</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <div id="content" class="content SectionMargin">
+    <div class="container">
+      <div class="row">
+
+        <div id="single-post-content" class="col-sm-8">
+          <article class="post">
+            <div class="post-title">
+              <h1>Vagrant - Multi-Machine-Multi-Environment</h1>
+            </div>
+            <div class="post-meta">
+              <span><i class="fa fa-calendar"></i>Fri 23 February 2018</span>
+              <span><i class="fa fa-tags"></i>
+                  <a href="../../../../../tag/vagrant.html">vagrant</a>
+                    ,
+                  <a href="../../../../../tag/ansible.html">ansible</a>
+            </span>
+            </div>
+
+            <div class="post-body">
+<div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#vagrant-multi-machine-multi-environment">Vagrant - Multi-Machine-Multi-Environment</a></li>
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#usage">Usage</a><ul>
+<li><a href="#environment-files">Environment files</a></li>
+</ul>
+</li>
+<li><a href="#its-still-under-development">It's still under development</a></li>
+</ul>
+</div>
+<h2 id="vagrant-multi-machine-multi-environment">Vagrant - Multi-Machine-Multi-Environment</h2>
+<p>Vagrant is a very good tool in defining and controling multiple guest per Vagrantfile. When you need to have another set of multiple guest, you need to create another Vagrantfile.</p>
+<p>Why don't we use a single Vagrantfile for Multi-Machine and Multi-Environment?</p>
+<p>Here is why you can use this repo. We YAMLize Vagrant's Multi-Machine setting into multiple .yml files in <code>envs/</code> folder. Each .yml represents an environment.</p>
+<h1 id="requirements">Requirements</h1>
+<ul>
+<li>Vagrant-vbguest</li>
+</ul>
+<div class="highlight"><pre><span></span><code>$ vagrant plugin install vagrant-vbguest
+</code></pre></div>
+
+<h1 id="usage">Usage</h1>
+<p>There is <code>thyvagrant</code> shell script, it's just a wrapper to vagrant binary file. </p>
+<p>You use <code>thyvagrant</code> the same way with how you run <code>vagrant</code> command but with additional <code>VAGRANT_ENV</code> variable to configure which environment vagrant will use.</p>
+<p>You can either put <code>VAGRANT_ENV</code> in front of <code>thyvagrant</code>; or export it first and run <code>thyvagrant</code> separately </p>
+<div class="highlight"><pre><span></span><code>$ <span class="nv">VAGRANT_ENV</span><span class="o">=</span>docker ./thyvagrant status
+Vagrant environment: docker
+Current machine states:
+
+docker                    poweroff <span class="o">(</span>virtualbox<span class="o">)</span>
+docker2                   not created <span class="o">(</span>virtualbox<span class="o">)</span>
+
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run <span class="sb">`</span>vagrant status NAME<span class="sb">`</span>.
+
+$ <span class="nb">export</span> <span class="nv">VAGRANT_ENV</span><span class="o">=</span>docker 
+$ ./thyvagrant status
+Vagrant environment: docker
+Current machine states:
+
+docker                    poweroff <span class="o">(</span>virtualbox<span class="o">)</span>
+docker2                   not created <span class="o">(</span>virtualbox<span class="o">)</span>
+
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run <span class="sb">`</span>vagrant status NAME<span class="sb">`</span>.
+</code></pre></div>
+
+<h2 id="environment-files">Environment files</h2>
+<ul>
+<li>It's stored in <code>envs/&lt;VAGRANT_ENV&gt;.yml</code>.</li>
+<li>Default environment is <code>main.yml</code>, when you run <code>thyvagrant</code> without <code>VAGRANT_ENV</code> set.</li>
+</ul>
+<p>Sample for an environment with two docker hosts (<code>env/docker.yml</code>)</p>
+<div class="highlight"><pre><span></span><code><span class="nt">machines</span><span class="p">:</span>
+  <span class="p p-Indicator">-</span> <span class="nt">name      </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">docker</span>
+    <span class="nt">memory    </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1024</span>
+    <span class="nt">primary   </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">autostart </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+    <span class="nt">network</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">private</span>
+      <span class="nt">addr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10.255.255.36</span>
+    <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">public</span>
+      <span class="nt">addr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">192.168.250.36</span>
+
+  <span class="p p-Indicator">-</span> <span class="nt">name      </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">docker2</span>
+    <span class="nt">memory    </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">4096</span>
+    <span class="nt">network</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">private</span>
+      <span class="nt">addr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">10.255.255.37</span>
+    <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">public</span>
+      <span class="nt">addr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">192.168.250.37</span>
+
+<span class="nt">machine_default</span><span class="p">:</span>
+  <span class="nt">vbguest.auto_update </span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+  <span class="nt">box</span><span class="p">:</span>  <span class="l l-Scalar l-Scalar-Plain">centos/7</span>
+</code></pre></div>
+
+<h1 id="its-still-under-development">It's still under development</h1>
+<p>It's still under development and not well tested yet :)</p>
+<ul>
+<li>Updates and enhancements keep coming.</li>
+<li>It's tested in Ubuntu. I don't foresee any issue with using it on another Linux distribution.</li>
+<li>Further testing need to be done on MacOS/Windows</li>
+</ul>            </div>
+          </article>
+        </div>
+
+        <aside id="sidebar" class="col-sm-4">
+          <div class="widget-area">
+            <div class="widget tags-widget">
+              <h3><strong>Tags</strong></h3>
+              <div class="tags">
+                  <a href="../../../../../tag/vagrant.html">
+                    vagrant
+                  </a>
+                  <a href="../../../../../tag/ansible.html">
+                    ansible
+                  </a>
+                  <a href="../../../../../tag/terraform.html">
+                    terraform
+                  </a>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+
+<footer id="footer" class="footer">
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12">
+      <br>
+          <p class="text-center copyright">Proudly powered by
+            <a href="https://getpelican.com/" class="footer-site-link">
+              Pelican, Static Site Generator
+            </a>.
+          </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<a href="#" class="scrollup"><i class="fa fa-arrow-circle-up"></i></a>
+
+<script src="/assets/aboutme/js/jquery-3.4.1.min.js"></script>
+<script src="/assets/aboutme/js/bootstrap.min.js"></script>
+<script src="/assets/aboutme/js/circle-progress.js"></script>
+<script src="/assets/aboutme/js/isotope.pkgd.min.js"></script>
+<script src="/assets/aboutme/js/lightbox.min.js"></script>
+<script src="/assets/aboutme/js/owl.carousel.min.js"></script>
+<script src="/assets/aboutme/js/validator.min.js"></script>
+<script src="/assets/aboutme/js/jquery.ajaxchimp.min.js"></script>
+<script src="/assets/aboutme/js/waypoint.js"></script>
+<script src="/assets/aboutme/js/jquery.counterup.min.js"></script>
+<script src="/assets/aboutme/js/main.js"></script>
+</body>
+</html>
